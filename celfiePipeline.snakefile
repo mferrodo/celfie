@@ -32,14 +32,11 @@ else:
             cov = "bismarkcov/{sample}_R1_001_val_1_bismark_bt2_pe.bismark.cov.gz"
         output:
             "celfie_runFiles/{sample}_GRCh38_chr.bed"
-        params:
-            liftOver = config["liftover"],
-            chain = config["chain"],
         shell:
             """
                 gzcat {input} | awk '{{print $1 "\t" $2 "\t" $3+1 "\t" $5 "\t" $5+$6}}' -  > {output}
             """
-            
+
     rule prepareCelfie:
         input:
             "celfie_runFiles/{sample}_GRCh38_chr.bed"
