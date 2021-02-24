@@ -26,7 +26,20 @@ if config["build"] == "hg19":
                 sed 's/^/chr/' tmp/{wildcards.sample}_GRCh38_chr.bed.tmp  > {output} ;
                 rm tmp/{wildcards.sample}.bed.tmp tmp/{wildcards.sample}_GRCh38_chr.bed.tmp
             """
-
+else:
+    rule convert:
+        input:
+            cov = "bismarkcov/{sample}_R1_001_val_1_bismark_bt2_pe.bismark.cov.gz"
+        output:
+            "celfie_runFiles/{sample}_GRCh38_chr.bed"
+        params:
+            liftOver = config["liftover"],
+            chain = config["chain"],
+        shell:
+            """
+                gzcat {input} | awk '{{print $1 "\t" $2 "\t" $3+1 "\t" $5 "\t" $5+$6}}' -  > {output}
+            """
+            
     rule prepareCelfie:
         input:
             "celfie_runFiles/{sample}_GRCh38_chr.bed"
@@ -34,12 +47,11 @@ if config["build"] == "hg19":
             "celfie_runFiles/{sample}_tims.txt"
         params:
             sites=config["sites"],
-            reference=config["reference"],
             sumbylist=config["sumbylist"],
         shell:
             """
-            bedtools intersect -a {input} -b {params.sites} > tmp/{wildcards.sample}_500.txt.tmp ;
-            python {params.sumbylist} {params.sites} tmp/{wildcards.sample}_500.txt.tmp {output} 1
+            bedtools intersect -a "{input}" -b "{params.sites}" > tmp/{wildcards.sample}_500.txt.tmp ;
+            python "{params.sumbylist}" "{params.sites}" tmp/{wildcards.sample}_500.txt.tmp {output} 1
             """
 
     rule mergeCelfie:
@@ -93,7 +105,11 @@ if config["build"] == "hg19":
             convergence_criteria = 0.001,
             num_random_restart = 1
         shell:
-            "python {params.celfie_em} {input.tims_testset} {output.outdir} {params.num_samples} {params.iterations} {params.num_unk} {params.iteration_number} {params.convergence_criteria} {params.num_random_restart}"
+            """
+            echo "Number of samples:"
+            echo {params.num_samples}
+            python {params.celfie_em} "{input.tims_testset}" "{output.outdir}" {params.num_samples} {params.iterations} {params.num_unk} {params.iteration_number} {params.convergence_criteria} {params.num_random_restart}
+            """
 
 
     rule labelCelfie:
