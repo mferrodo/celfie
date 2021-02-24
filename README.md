@@ -82,6 +82,20 @@ To run many parallel replicates on a SGE or UGE cluster configuration, see run_r
 
 Jupyter notebooks to reproduce figures and statistical analyses for the final version of this manuscript can be found in `paper_figures` directory. 
 
+## snakemake pipeline
+CelFIE can be run in parallel on coverage files obtained from bismark with the `celfiePipeline.snakefile` script. The bismark coverage files should be named `./bismarkcov/{sample}_R1_001_val_1_bismark_bt2_pe.bismark.cov.gz` and the `config.yaml` file should be edited so that it reflects your current configuration.
+
+```
+build: "hg19" # celfie is based on hg38, if the bismark files are mapped to hg19 a liftover step is performed
+liftover: "/Users/rmvpaeme/liftOver" # not needed if hg38
+chain: "/Users/rmvpaeme/GRCh37_to_GRCh38.chain.gz" # not needed if hg38
+sites: "/Users/rmvpaeme/Repos/2003_CelFiE/tubestudy_data/rrbs_tims_with_celfie/wgbs_tims_rrbs_sites_500_hg38.txt" # bed file containing the first 3 columns of "reference_tims_summed"
+referenceLabels: "/Users/rmvpaeme/Repos/2003_CelFiE/celfiePipeline/reference_dataset_WGBS_tissues/celfie_reference_file_key_WGBS_tissues.txt" # order of the cell/tissue types in "reference_tims_summed"
+reference_tims_summed: "/Users/rmvpaeme/Repos/2003_CelFiE/tubestudy_data/rrbs_tims_with_celfie/wgbs_tims_rrbs_500_summed.txt" # the reference dataset used for CeLFIE, with the structure chr - start - stop - methylated_reads_celltype_1 - depth_celltype_1 - methylated_reads_celltype_N - depth_celltype_N
+celfie_em: "/Users/rmvpaeme/Repos/2003_CelFiE/celfiePipeline/celfie/EM/em.py"
+sumbylist: "/Users/rmvpaeme/Repos/2003_CelFiE/celfie/shell_scripts/sum_by_list.py"
+```
+
 ## Contact 
 For any questions with this code, please contact christa@g.ucla.edu 
 
