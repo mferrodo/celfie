@@ -37,110 +37,110 @@ else:
                 gzcat {input} | awk '{{print $1 "\t" $2 "\t" $3+1 "\t" $5 "\t" $5+$6}}' -  > {output}
             """
 
-    rule prepareCelfie:
-        input:
-            "celfie_runFiles/{sample}_GRCh38_chr.bed"
-        output:
-            "celfie_runFiles/{sample}_tims.txt"
-        params:
-            sites=config["sites"],
-            sumbylist=config["sumbylist"],
-        shell:
-            """
-            bedtools intersect -a "{input}" -b "{params.sites}" > tmp/{wildcards.sample}_500.txt.tmp ;
-            python "{params.sumbylist}" "{params.sites}" tmp/{wildcards.sample}_500.txt.tmp {output} 1
-            """
+rule prepareCelfie:
+    input:
+        "celfie_runFiles/{sample}_GRCh38_chr.bed"
+    output:
+        "celfie_runFiles/{sample}_tims.txt"
+    params:
+        sites=config["sites"],
+        sumbylist=config["sumbylist"],
+    shell:
+        """
+        bedtools intersect -a "{input}" -b "{params.sites}" > tmp/{wildcards.sample}_500.txt.tmp ;
+        python "{params.sumbylist}" "{params.sites}" tmp/{wildcards.sample}_500.txt.tmp {output} 1
+        """
 
-    rule mergeCelfie:
-        input:
-            expand("celfie_runFiles/{sample}_tims.txt", sample = baseIDS)
-        output:
-            tims = "celfie_runFiles/testset.celfie",
-            sample_order = "celfie_runFiles/testset_order.celfie"
-        params:
-            reference_tims_txt = config["reference_tims_summed"]
-        run:
-            import pandas as pd
-            import numpy as np
-            import sys
-            import os
-            import glob
+rule mergeCelfie:
+    input:
+        expand("celfie_runFiles/{sample}_tims.txt", sample = baseIDS)
+    output:
+        tims = "celfie_runFiles/testset.celfie",
+        sample_order = "celfie_runFiles/testset_order.celfie"
+    params:
+        reference_tims_txt = config["reference_tims_summed"]
+    run:
+        import pandas as pd
+        import numpy as np
+        import sys
+        import os
+        import glob
 
-            orderlist = []
-            df_merged = pd.DataFrame()
+        orderlist = []
+        df_merged = pd.DataFrame()
 
-            for file in input:
-                    print(file)
-                    file_name = os.path.splitext(os.path.basename(file))[0]
-                    df = pd.read_csv(file, sep="\t", header=None)
-                    orderlist.append(file_name)
-                    if df_merged.empty == True:
-                        df_merged = df
-                    elif df_merged.empty == False:
-                        df_merged = pd.merge(df_merged, df, how = "inner", right_on = [0,1,2], left_on = [0,1,2])
+        for file in input:
+                print(file)
+                file_name = os.path.splitext(os.path.basename(file))[0]
+                df = pd.read_csv(file, sep="\t", header=None)
+                orderlist.append(file_name)
+                if df_merged.empty == True:
+                    df_merged = df
+                elif df_merged.empty == False:
+                    df_merged = pd.merge(df_merged, df, how = "inner", right_on = [0,1,2], left_on = [0,1,2])
 
-            reference_tims = pd.read_csv(params.reference_tims_txt, sep = "\t", header = None)
+        reference_tims = pd.read_csv(params.reference_tims_txt, sep = "\t", header = None)
 
-            df_final =  pd.concat([df_merged, reference_tims], axis = 1)
+        df_final =  pd.concat([df_merged, reference_tims], axis = 1)
 
-            df_final.to_csv(output.tims, sep = "\t", header = None, index = None)
-            pd.DataFrame(orderlist).transpose().to_csv(output.sample_order, sep = "\t", header = None, index = None)
+        df_final.to_csv(output.tims, sep = "\t", header = None, index = None)
+        pd.DataFrame(orderlist).transpose().to_csv(output.sample_order, sep = "\t", header = None, index = None)
 
-    rule runCelfie:
-        input:
-            tims_testset = "celfie_runFiles/testset.celfie",
-            sample_order = "celfie_runFiles/testset_order.celfie"
-        output:
-            pkl = "celfieOut/1_alpha.pkl",
-            outdir = "celfieOut"
-        params:
-            celfie_em = config["celfie_em"],
-            num_samples = len(baseIDS),
-            iterations = 1000,
-            num_unk = 1,
-            iteration_number = 1,
-            convergence_criteria = 0.001,
-            num_random_restart = 1
-        shell:
-            """
-            echo "Number of samples:"
-            echo {params.num_samples}
-            python {params.celfie_em} "{input.tims_testset}" "{output.outdir}" {params.num_samples} {params.iterations} {params.num_unk} {params.iteration_number} {params.convergence_criteria} {params.num_random_restart}
-            """
+rule runCelfie:
+    input:
+        tims_testset = "celfie_runFiles/testset.celfie",
+        sample_order = "celfie_runFiles/testset_order.celfie"
+    output:
+        pkl = "celfieOut/1_alpha.pkl",
+        outdir = "celfieOut"
+    params:
+        celfie_em = config["celfie_em"],
+        num_samples = len(baseIDS),
+        iterations = 1000,
+        num_unk = 1,
+        iteration_number = 1,
+        convergence_criteria = 0.001,
+        num_random_restart = 1
+    shell:
+        """
+        echo "Number of samples:"
+        echo {params.num_samples}
+        python {params.celfie_em} "{input.tims_testset}" "{output.outdir}" {params.num_samples} {params.iterations} {params.num_unk} {params.iteration_number} {params.convergence_criteria} {params.num_random_restart}
+        """
 
 
-    rule labelCelfie:
-        input:
-            pkl = "celfieOut/1_alpha.pkl",
-            sample_order = "celfie_runFiles/testset_order.celfie"
-        output:
-            celfieOutputFile = "celfieOutput_deconvolution.tsv"
-        params:
-            referenceLabels = config['referenceLabels']
-        run:
-            import pickle
-            import csv
-            import os
-            import pandas as pd
+rule labelCelfie:
+    input:
+        pkl = "celfieOut/1_alpha.pkl",
+        sample_order = "celfie_runFiles/testset_order.celfie"
+    output:
+        celfieOutputFile = "celfieOutput_deconvolution.tsv"
+    params:
+        referenceLabels = config['referenceLabels']
+    run:
+        import pickle
+        import csv
+        import os
+        import pandas as pd
 
-            infile = open(input.pkl,'rb')
-            dict = pickle.load(infile)
-            df = pd.DataFrame.from_dict(dict)
+        infile = open(input.pkl,'rb')
+        dict = pickle.load(infile)
+        df = pd.DataFrame.from_dict(dict)
 
-            inputRefKey = params.referenceLabels
-            with open(inputRefKey, 'r') as f:
-              reader = csv.reader(f, delimiter="\t")
-              column_list = list(reader)
-            flat_list = [item for sublist in column_list for item in sublist]
-            df.columns = flat_list
+        inputRefKey = params.referenceLabels
+        with open(inputRefKey, 'r') as f:
+          reader = csv.reader(f, delimiter="\t")
+          column_list = list(reader)
+        flat_list = [item for sublist in column_list for item in sublist]
+        df.columns = flat_list
 
-            inputSampleKey = input.sample_order
-            with open(inputSampleKey, 'r') as f:
-              reader = csv.reader(f, delimiter="\t")
-              column_list = list(reader)
+        inputSampleKey = input.sample_order
+        with open(inputSampleKey, 'r') as f:
+          reader = csv.reader(f, delimiter="\t")
+          column_list = list(reader)
 
-            flat_list = [item for sublist in column_list for item in sublist]
+        flat_list = [item for sublist in column_list for item in sublist]
 
-            df.index = flat_list
-            deconvOut = output.celfieOutputFile
-            df.to_csv(deconvOut, sep = "\t")
+        df.index = flat_list
+        deconvOut = output.celfieOutputFile
+        df.to_csv(deconvOut, sep = "\t")
