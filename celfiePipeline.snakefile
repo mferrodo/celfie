@@ -34,6 +34,7 @@ else:
             "celfie_runFiles/{sample}_GRCh38_chr.bed"
         shell:
             """
+                mkdir -p tmp
                 gzcat {input} | awk '{{print $1 "\t" $2 "\t" $3+1 "\t" $5 "\t" $5+$6}}' -  > {output}
             """
 
