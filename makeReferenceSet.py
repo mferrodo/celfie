@@ -16,14 +16,14 @@ cpuCount = (multiprocessing.cpu_count() - 2)
 ### BEDtools > 2.27.1 is needed!!
 ### Tested with py >3.4
 
-os.chdir("/Users/rmvpaeme/Repos/2003_CelFiE/NBL_reference_set/")
+os.chdir("/Users/rmvpaeme/Repos/2003_CelFiE/2020_Maisa_GRCh38/reference_samples")
 
 # Name of output
 trainFileName = "reference_set.bed"
 
 # Folder to store intermediate files
 tmp_folder = "/tmp/"
-
+#type = "individ_cpg"
 ## train files for CancerLocator
 # Infinium data
 NBL_bismark_folder = "./NBL"
@@ -33,9 +33,13 @@ cfDNA_bismark_folder = "./cfDNA"
 cfDNA_bismark_files = glob.glob(os.path.join(cfDNA_bismark_folder, "*.cov.gz"))
 
 # The file containing the features (= the intersect between HM450K data and RRBS data, see GitHub README)
-clusters = pd.read_csv("/Users/rmvpaeme/Repos/2003_CelFiE/NBL_reference_set/output/results_cfDNA_NBL_regs_nochr.csv", sep="\t",usecols=[0,1,2], skiprows=[0], header=None, index_col=None)
+#clusters = pd.read_csv("/Users/rmvpaeme/Repos/2003_CelFiE/NBL_reference_set/output/results_cfDNA_NBL_regs_nochr.csv", sep="\t",usecols=[0,1,2], skiprows=[0], header=None, index_col=None)
+#clusters = pd.read_csv("/Users/rmvpaeme/Repos/BismarkPipeline/RRBS_regions20-200.bed", sep="\t",usecols=[0,1,2], skiprows=[0], header=None, index_col=None)
+clusters = pd.read_csv("results_cfDNA_NBL_hg38_regs.tsv", sep="\t",usecols=[0,1,2], skiprows=[0], header=None, index_col=None)
+clusters = clusters[clusters[0] != "chrY"]
+clusters = clusters[clusters[0] != "chrX"]
 clusters[3] = clusters.index
-clusterFile = "RRBSregions"
+clusterFile = "DMRs"
 clusters.to_csv(tmp_folder + "%s.txt" % clusterFile, header=None, index=None, sep='\t', mode = 'w')
 clusters = clusters.drop([3], axis = 1) # Use empty index to later extract all the clusters from, so that every sample has the same number of clusters
 
