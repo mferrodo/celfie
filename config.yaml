@@ -6,3 +6,9 @@ referenceLabels: "/Users/rmvpaeme/Repos/2003_CelFiE/celfiePipeline/reference_dat
 reference_tims_summed: "/Users/rmvpaeme/Repos/2003_CelFiE/tubestudy_data/rrbs_tims_with_celfie/wgbs_tims_rrbs_500_summed.txt"
 celfie_em: "/Users/rmvpaeme/Repos/2003_CelFiE/celfiePipeline/celfie/EM/em.py"
 sumbylist: "/Users/rmvpaeme/Repos/2003_CelFiE/celfie/shell_scripts/sum_by_list.py"
+iterations: 1000
+num_unk: 1
+iteration_number: 1
+convergence_criteria: 0.01
+num_random_restart: 10
+random_seed: 100
