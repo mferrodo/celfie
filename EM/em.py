@@ -226,6 +226,7 @@ if __name__=="__main__":
     iteration_number = sys.argv[6]
     convergence_criteria = sys.argv[7]
     num_random_restart = sys.argv[8]
+    random_seed = sys.argv[9] # test random seed
 
     # make output directory if it does not exist
     if not os.path.exists(output_dir) and int(iteration_number)==1:
@@ -251,6 +252,8 @@ if __name__=="__main__":
 
     # Run EM with the specified iterations and convergence criteria
     random_restarts = []
+    
+    np.random.seed(int(random_seed)) #test random seeds
 
     for i in range(int(num_random_restart)): 
         alpha, gamma, ll = em(x, x_depths, y, y_depths, int(iterations), float(convergence_criteria))
