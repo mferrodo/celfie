@@ -1,7 +1,7 @@
 configfile: "config.yaml"
 
 # Sample list
-baseIDS, = glob_wildcards("bismarkcov/{sample}_R1_001_val_1_bismark_bt2_pe.bismark.cov.gz")
+baseIDS, = glob_wildcards("../bismarkcov/{sample}_R1_001_val_1_bismark_bt2_pe.bismark.cov.gz")
 
 rule all:
     input:
@@ -12,7 +12,7 @@ rule all:
 if config["build"] == "hg19":
     rule convert:
         input:
-            cov = "bismarkcov/{sample}_R1_001_val_1_bismark_bt2_pe.bismark.cov.gz"
+            cov = "../bismarkcov/{sample}_R1_001_val_1_bismark_bt2_pe.bismark.cov.gz"
         output:
             "celfie_runFiles/{sample}_GRCh38_chr.bed"
         params:
@@ -21,7 +21,7 @@ if config["build"] == "hg19":
         shell:
             """
                 mkdir -p tmp
-                gzcat {input} | awk '{{print $1 "\t" $2 "\t" $3+1 "\t" $5 "\t" $5+$6}}' - > tmp/{wildcards.sample}.bed.tmp ;
+                zcat {input} | awk '{{print $1 "\t" $2 "\t" $3+1 "\t" $5 "\t" $5+$6}}' - > tmp/{wildcards.sample}.bed.tmp ;
                 {params.liftOver} tmp/{wildcards.sample}.bed.tmp {params.chain} tmp/{wildcards.sample}_GRCh38_chr.bed.tmp  tmp/unmapped.tsv.tmp ;
                 sed 's/^/chr/' tmp/{wildcards.sample}_GRCh38_chr.bed.tmp  > {output} ;
                 rm tmp/{wildcards.sample}.bed.tmp tmp/{wildcards.sample}_GRCh38_chr.bed.tmp
@@ -29,13 +29,12 @@ if config["build"] == "hg19":
 else:
     rule convert:
         input:
-            cov = "bismarkcov/{sample}_R1_001_val_1_bismark_bt2_pe.bismark.cov.gz"
+            cov = "../bismarkcov/{sample}_R1_001_val_1_bismark_bt2_pe.bismark.cov.gz"
         output:
             "celfie_runFiles/{sample}_GRCh38_chr.bed"
         shell:
             """
-		        mkdir -p tmp
-                gzcat {input} | awk '{{print $1 "\t" $2 "\t" $3+1 "\t" $5 "\t" $5+$6}}' -  > {output}
+				zcat {input} | awk '{{print $1 "\t" $2 "\t" $3+1 "\t" $5 "\t" $5+$6}}' -  > {output}
             """
 
 rule prepareCelfie:
@@ -48,8 +47,9 @@ rule prepareCelfie:
         sumbylist=config["sumbylist"],
     shell:
         """
-        bedtools intersect -a "{input}" -b "{params.sites}" > tmp/{wildcards.sample}_500.txt.tmp ;
-        python "{params.sumbylist}" "{params.sites}" tmp/{wildcards.sample}_500.txt.tmp {output} 1
+        mkdir -p tmp;
+		bedtools intersect -a "{input}" -b "{params.sites}" > tmp/{wildcards.sample}_500.txt.tmp ;
+        python3 "{params.sumbylist}" "{params.sites}" tmp/{wildcards.sample}_500.txt.tmp {output} 1
         """
 
 rule mergeCelfie:
@@ -93,20 +93,21 @@ rule runCelfie:
         sample_order = "celfie_runFiles/testset_order.celfie"
     output:
         pkl = "celfieOut/1_alpha.pkl",
-        outdir = "celfieOut"
+        outdir = directory("celfieOut")
     params:
         celfie_em = config["celfie_em"],
         num_samples = len(baseIDS),
-        iterations = 1000,
-        num_unk = 1,
-        iteration_number = 1,
-        convergence_criteria = 0.001,
-        num_random_restart = 1
+        iterations = config["iterations"],
+        num_unk = config["num_unk"],
+        iteration_number = config["iteration_number"],
+        convergence_criteria = config["convergence_criteria"], 
+        num_random_restart = config["num_random_restart"],
+        random_seed = config["random_seed"]
     shell:
         """
         echo "Number of samples:"
         echo {params.num_samples}
-        python {params.celfie_em} "{input.tims_testset}" "{output.outdir}" {params.num_samples} {params.iterations} {params.num_unk} {params.iteration_number} {params.convergence_criteria} {params.num_random_restart}
+        python3 {params.celfie_em} "{input.tims_testset}" "{output.outdir}" {params.num_samples} {params.iterations} {params.num_unk} {params.iteration_number} {params.convergence_criteria} {params.num_random_restart} {params.random_seed}
         """
 
 
